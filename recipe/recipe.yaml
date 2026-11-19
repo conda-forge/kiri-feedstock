@@ -1,5 +1,5 @@
 context:
-  version: "0.2.1"
+  version: "0.2.2"
 
 package:
   name: kiri
@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://github.com/libracoder/kiri/archive/v${{ version }}.tar.gz
-  sha256: 4822aac2d7c131b3f4d3fd608bd9fcf880a25f10b4fafdedda39301be606f0f3
+  sha256: aaa88911bdfc8e83253cefc9cfd884c3d0aa55ee9dc1f67a19b94564dde6fbbf
 
 build:
   skip:
