@@ -22,12 +22,14 @@ build:
         # objc2 looks up classes via objc_getClass, so -dead_strip_dylibs drops Virtualization/AppKit/WebKit/Foundation.
         then: export CARGO_BUILD_RUSTFLAGS="${CARGO_BUILD_RUSTFLAGS//-C link-arg=-Wl,-dead_strip_dylibs/}"
       - cargo-bundle-licenses --format yaml --output ./THIRDPARTY.yml
-      - cargo auditable install -j ${CPU_COUNT} --root "${PREFIX}" --locked --no-track --path crates/kiri
-      - if: osx
-        # Virtualization.framework refuses to start a VM without this entitlement.
-        then: /usr/bin/codesign --force --sign - --entitlements crates/kiri/kiri.entitlements "${PREFIX}/bin/kiri"
-      - if: linux
-        then: cargo auditable install -j ${CPU_COUNT} --root "${PREFIX}" --locked --no-track --path crates/kiri-init
+      - if: unix
+        then:
+          - cargo auditable install -j ${CPU_COUNT} --root "${PREFIX}" --locked --no-track --path crates/kiri
+          - if: linux
+            then: cargo auditable install -j ${CPU_COUNT} --root "${PREFIX}" --locked --no-track --path crates/kiri-init
+          - if: osx
+            # Virtualization.framework refuses to start a VM without this entitlement.
+            then: /usr/bin/codesign --force --sign - --entitlements crates/kiri/kiri.entitlements "${PREFIX}/bin/kiri"
 
 requirements:
   build:
@@ -38,12 +40,13 @@ requirements:
     - cargo-auditable
 
 tests:
+  - if: osx
+    then:
+      script:
+        - otool -L "${PREFIX}/bin/kiri" | grep -q Virtualization.framework
+        - /usr/bin/codesign -d --entitlements - --xml "${PREFIX}/bin/kiri" 2>&1 | grep -q com.apple.security.virtualization
   - script:
       - kiri || true
-      - if: osx
-        then:
-          - otool -L "${PREFIX}/bin/kiri" | grep -q Virtualization.framework
-          - /usr/bin/codesign -d --entitlements - --xml "${PREFIX}/bin/kiri" 2>&1 | grep -q com.apple.security.virtualization
   - package_contents:
       strict: true
       bin:
