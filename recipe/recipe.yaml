@@ -11,17 +11,22 @@ source:
 
 build:
   skip:
-    - win
     - osx
-  number: 0
+  number: 1
   script:
     env:
       CARGO_PROFILE_RELEASE_STRIP: symbols
       CARGO_PROFILE_RELEASE_LTO: fat
     content:
       - cargo-bundle-licenses --format yaml --output ./THIRDPARTY.yml
-      - cargo auditable install -j ${CPU_COUNT} --root "${PREFIX}" --locked --no-track --path crates/kiri
-      - cargo auditable install -j ${CPU_COUNT} --root "${PREFIX}" --locked --no-track --path crates/kiri-init
+      - if: unix
+        then:
+          - cargo auditable install -j ${CPU_COUNT} --root "${PREFIX}" --locked --no-track --path crates/kiri
+          - if: linux
+            then: cargo auditable install -j ${CPU_COUNT} --root "${PREFIX}" --locked --no-track --path crates/kiri-init
+        else:
+          - cargo auditable install -j %CPU_COUNT% --root "%LIBRARY_PREFIX%" --locked --no-track --path crates/kiri
+          - cargo auditable install -j %CPU_COUNT% --root "%LIBRARY_PREFIX%" --locked --no-track --path crates/kiri-win
 
 requirements:
   build:
@@ -33,12 +38,17 @@ requirements:
 
 tests:
   - script:
-      - kiri || true
+      - if: unix
+        then: kiri || true
+        else: 'kiri 2>&1 | findstr /C:"usage: kiri"'
   - package_contents:
       strict: true
       bin:
         - kiri
-        - kiri-init
+        - if: linux
+          then: kiri-init
+        - if: win
+          then: kiri-win
 
 about:
   homepage: https://github.com/libracoder/kiri
