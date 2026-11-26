@@ -12,7 +12,7 @@ source:
 build:
   skip:
     - win
-  number: 0
+  number: 1
   script:
     env:
       CARGO_PROFILE_RELEASE_STRIP: symbols
